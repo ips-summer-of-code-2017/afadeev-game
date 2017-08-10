@@ -5,33 +5,6 @@
 
 'use strict';
 
-class ImageLoader {
-    constructor(filePath) {
-        this.image = new Image();
-        this.image.src = filePath;
-        this.promise = new Promise((resolve, reject) => {
-            this.image.onload = () => {
-                resolve(this.image);
-            }
-            this.image.onerror = () => {
-                reject(new Error("Image load failed: " + filePath));
-            }
-        });
-    }
-
-    get value() {
-        return this.promise;
-    }
-
-    then(...args) {
-        return this.promise.then.apply(this.promise, args);
-    }
-
-    catch (...args) {
-        return this.promise.catch.apply(this.promise, args);
-    }
-}
-
 class NewSprite {
     constructor(context, image, spriteData) {
         this.context = context;
@@ -77,16 +50,7 @@ class SpriteAtlas {
         this.context = context;
         this.name = atlasName;
         this.sprites = new Map();
-        //this.isLoaded = this.load();
-        this.isLoadedFlag = false;
-        this.isLoaded = new Promise((resolve, reject) => {
-            let timer = setInterval(() => {
-                if (this.isLoadedFlag) {
-                    resolve(true);
-                    clearInterval(timer);
-                }
-            }, 1000 / 60);
-        });
+        this.isLoaded = this.load();
     }
 
     parseSpriteData(text) {
@@ -101,40 +65,57 @@ class SpriteAtlas {
         return data;
     }
 
-    async addSprites(text) {
-        const lines = Utils.splitIntoLines(text);
-        const imageFileName = Utils.substringAfter(lines[0], " ");
-        let image = await new ImageLoader(`sprites/${imageFileName}`);
-        console.log(image);
-        for (let index = 1; index < lines.length - 1; index++) {
-            const spriteData = this.parseSpriteData(lines[index]);
-            let sprite = new NewSprite(this.context, image, spriteData);
-            console.log(sprite);
-            this.sprites.set(spriteData.name, sprite);
-        }
-        return Promise.resolve();
-    }
-
     getSprite(name) {
         let sprite = this.sprites.get(name);
         return (sprite ? sprite : null);
     }
 
-    async load(index = 1) {
-        let text = await fetch(`sprites/${this.name}_${index}.atlas`)
-            .then(response => {
-                if (response.ok) {
-                    return response.text();
-                } else {
-                    this.isLoadedFlag = true;
-                    return null;
-                }
+    load() {
+        return this.fetchSprite('index.txt').then((text) => {
+            const lines = Utils.splitIntoNonEmptyLines(text);
+            const sprites = lines.map((line) => {
+                return this.fetchSprite(line).then((text) => {
+                    return this.loadSpriteContent(text);
+                });
             });
-        if (!Utils.isNull(text)) {
-            await this.addSprites(text);
-            this.load(index + 1);
-            console.log(text);
-        }
+            return Promise.all(sprites);
+        }).catch((error) => {
+            alert(error);
+            throw error;
+        });
+    }
+
+    loadSpriteContent(text) {
+        const lines = Utils.splitIntoLines(text);
+        const imageFileName = Utils.substringAfter(lines[0], " ");
+
+        let image = new Image();
+        image.src = `sprites/${imageFileName}`;
+        let promise = new Promise((resolve, reject) => {
+            image.onload = () => {
+                resolve(image);
+            }
+            image.onerror = () => {
+                reject(new Error("Image load failed: " + imageFileName));
+            }
+        });
+
+        return promise.then((image) => {
+            for (let index = 1; index < lines.length - 1; index++) {
+                const spriteData = this.parseSpriteData(lines[index]);
+                const sprite = new NewSprite(this.context, image, spriteData);
+                this.sprites.set(spriteData.name, sprite);
+            }
+        });
+    }
+
+    fetchSprite(name) {
+        return fetch(`sprites/${name}`).then((response) => {
+            if (response.ok) {
+                return response.text();
+            }
+            throw new Error(`sprite "${name}" load failed with status ${response.status}`);
+        })
     }
 
     draw(spriteName, location) {

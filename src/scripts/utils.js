@@ -39,6 +39,20 @@ let Utils = {
         let newline = /\r\n|\n\r|\n|\r/g;
         return text.replace(newline, "\n").split("\n");
     },
+
+    splitIntoNonEmptyLines(text) {
+        // TODO: use foreach+filter
+        const lines = Utils.splitIntoLines(text);
+        let result = []
+        for (let line of lines) {
+            line = line.trim();
+            if (line.length != 0) {
+                result.push(line);
+            }
+        }
+        return result;
+    },
+
     /**
      * @method substringAfter
      * @description Returns substring from text followed by string to search
