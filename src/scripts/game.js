@@ -171,8 +171,6 @@ let objectClassEnum = {
     Spikes: Spikes,
 }
 
-console.log(typeof Character)
-
 /**
  * @enum {string}
  * @description Transforms object type to object type string

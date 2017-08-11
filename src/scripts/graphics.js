@@ -5,7 +5,7 @@
 
 'use strict';
 
-class NewSprite {
+class Sprite {
     constructor(context, image, spriteData) {
         this.context = context;
         this.image = image;
@@ -103,9 +103,10 @@ class SpriteAtlas {
         return promise.then((image) => {
             for (let index = 1; index < lines.length - 1; index++) {
                 const spriteData = this.parseSpriteData(lines[index]);
-                const sprite = new NewSprite(this.context, image, spriteData);
+                const sprite = new Sprite(this.context, image, spriteData);
                 this.sprites.set(spriteData.name, sprite);
             }
+            console.log(`Spritesheet ${imageFileName} is loaded`)
         });
     }
 
@@ -122,91 +123,6 @@ class SpriteAtlas {
         let sprite = this.getSprite(spriteName);
         if (sprite) {
             sprite.draw(location);
-        }
-    }
-}
-
-/**
- * @class SpriteSheet
- * @description Represents a sprite sheet
- */
-class SpriteSheet {
-    /**
-     * @method @constructs SpriteSheet
-     * @param {CanvasRenderingContext2D} context - Drawing context
-     * @param {string} imageFilePath - Path to image file
-     * @param {number} tileWidth - Width of sprites
-     * @param {number=} tileHeight - Height of sprites
-     */
-    constructor(context, imageFilePath, tileWidth, tileHeight = tileWidth) {
-        this.context = context;
-        this.imageFilePath = imageFilePath;
-        this.tileWidth = tileWidth;
-        this.tileHeight = tileHeight;
-        this.image = new Image();
-        this.tiles = [];
-        this.isCompiled = false;
-        this.load();
-    }
-
-    load() {
-        fetch(this.imageFilePath).then((response) => {
-            return response.blob();
-        }).then((blob) => {
-            let imageURL = URL.createObjectURL(blob);
-            this.image.src = imageURL;
-            this.compile();
-            console.log(`Sprite ${this.imageFilePath.substring(this.imageFilePath.lastIndexOf('/') + 1)} is loaded`);
-        });
-    }
-
-    /**
-     * @private @method compile
-     * @description Splits image into sectors
-     */
-    compile() {
-        const rows = Math.floor(this.image.height / this.tileHeight);
-        const cols = Math.floor(this.image.width / this.tileWidth);
-        if (rows && cols) {
-            for (let row = 0; row < rows; row++) {
-                for (let col = 0; col < cols; col++) {
-                    const index = row * cols + col;
-                    this.tiles[index] = {
-                        x: col * this.tileWidth,
-                        y: row * this.tileHeight
-                    };
-                }
-            }
-            this.isCompiled = true;
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    /**
-     * @method draw
-     * @param {number} index - Index of sprite
-     * @param {number} x - X coordinate of drawing position
-     * @param {number} y - Y coordinate of drawing position
-     * @description Draws sprite by index at needed point
-     */
-    draw(index, x, y) {
-        const dstX = Math.round(x);
-        const dstY = Math.round(y);
-        const width = this.tileWidth;
-        const height = this.tileHeight;
-        if (this.isCompiled || this.compile()) {
-            const srcX = this.tiles[index].x;
-            const srcY = this.tiles[index].y;
-            this.context.drawImage(
-                this.image,
-                srcX, srcY, width, height,
-                dstX, dstY, width, height
-            );
-        } else {
-            this.context.fillStyle = "gray";
-            this.context.fillRect(dstX, dstY, width, height);
         }
     }
 }
@@ -354,12 +270,11 @@ class GameGraphics {
     constructor(canvas) {
         this.canvas = canvas;
         this.context = canvas.getContext("2d");
-        this.testSpriteSheet = new SpriteSheet(this.context, "sprites/tilesets/test.png", 64);
-        this.textures = {};
         this.camera = null;
 
         this.atlas = new SpriteAtlas(this.context, "sprites");
         this.isInitalized = false;
+        this.textures = {};
         this.initalize()
 
         this.fullScreen = false;
