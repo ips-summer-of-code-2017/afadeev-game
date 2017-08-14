@@ -114,8 +114,9 @@ class SpriteAtlas {
         return fetch(`sprites/${name}`).then((response) => {
             if (response.ok) {
                 return response.text();
+            } else {
+                throw new Error(`Sprite "${name}" load failed with status ${response.status}`);
             }
-            throw new Error(`sprite "${name}" load failed with status ${response.status}`);
         })
     }
 
@@ -127,7 +128,7 @@ class SpriteAtlas {
     }
 }
 
-class NewAnimation {
+class Animation {
     constructor(atlas, name) {
         this.atlas = atlas;
         this.name = name;
@@ -379,7 +380,7 @@ class GameGraphics {
     }
 
     drawGameState(gameState) {
-        if (this.isInitalized) {
+        if (this.isInitalized && gameState.isLoaded) {
             this.drawBackground();
             this.drawWorldState(gameState.worldState);
         }

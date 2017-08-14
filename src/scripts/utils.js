@@ -19,6 +19,7 @@ let Utils = {
     isNull(value) {
         return Object.is(value, null);
     },
+
     /**
      * @method lerp
      * @desc Returns linear
@@ -29,9 +30,10 @@ let Utils = {
     lerp(x1, x2, alpha) {
         return (x1 * (1 - alpha) + x2 * alpha);
     },
+
     /**
      * @method splitIntoLines
-     * @description Returns lines from string as array of strings
+     * @description Splits text into lines and returns them as array of strings
      * @param {string} text - Text to split into lines
      * @return {Array.<string>}
      */
@@ -40,6 +42,12 @@ let Utils = {
         return text.replace(newline, "\n").split("\n");
     },
 
+    /**
+     * @method splitIntoNonEmptyLines
+     * @desc Splits text into non empty lines and returns them as array of strings
+     * @param {string} text 
+     * @return {Array.<string>}
+     */
     splitIntoNonEmptyLines(text) {
         // TODO: use foreach+filter
         const lines = Utils.splitIntoLines(text);

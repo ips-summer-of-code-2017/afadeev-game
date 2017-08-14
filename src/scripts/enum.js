@@ -31,10 +31,4 @@ class Enum {
             yield this[key];
         }
     }
-
-    * testIter() {
-        for (let key in this) {
-            yield this[key];
-        }
-    }
 }

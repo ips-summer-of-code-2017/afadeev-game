@@ -3,4 +3,7 @@
 .vscode/
 dist/
 node_modules/
-src/sprites/unused
+src/sprites/unused/
+
+# Cheetah Texture Packer and Tiled Map Editor
+tools/
