@@ -142,11 +142,11 @@ class MovableObject extends GameObject {
         other.position = other.position
             .add(shifts[indexOfMin].multiply(-1 / 2));
         if (indexOfMin == 0 || indexOfMin == 2) {
-            this.speed.x *= 1 / 2;
-            other.speed.x *= 1 / 2;
+            this.speed.x *= 9 / 10;
+            other.speed.x *= 9 / 10;
         } else {
-            this.speed.y *= 1 / 2;
-            other.speed.y *= 1 / 2;
+            this.speed.y *= 9 / 10;
+            other.speed.y *= 9 / 10;
         }
     }
 }
@@ -234,6 +234,12 @@ class Spikes extends GameObject {
     }
 }
 
+class Gate extends GameObject {
+    constructor() {
+        super();
+    }
+}
+
 class ObjectFactory {
     constructor(params) {
         this.keyboard = params.keyboard;
@@ -265,6 +271,7 @@ let objectClassEnum = {
     Box: Box,
     Wall: Wall,
     Spikes: Spikes,
+    Gate: Gate,
 }
 
 /**
@@ -276,6 +283,7 @@ let objectTypeEnum = {
     Box: Box.name,
     Wall: Wall.name,
     Spikes: Spikes.name,
+    Gate: Gate.name,
 }
 
 /**
@@ -587,9 +595,13 @@ class Game {
     }
 
     tick() {
-        let deltaTime = this.timer.deltaTime;
-        this.timer.reset();
-        this.update(deltaTime);
+        try {
+            let deltaTime = this.timer.deltaTime;
+            this.timer.reset();
+            this.update(deltaTime);
+        } catch (error) {
+            console.log("fatal error:", error);
+        }
         requestAnimationFrame(this.tick.bind(this));
     }
 

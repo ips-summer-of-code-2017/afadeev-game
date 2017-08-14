@@ -31,6 +31,14 @@
                  "height":128,
                  "id":5,
                  "name":"Character",
+                 "properties":
+                    {
+                     "input":"1,2,3"
+                    },
+                 "propertytypes":
+                    {
+                     "input":"string"
+                    },
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -52,27 +60,38 @@
                 }, 
                 {
                  "gid":69,
-                 "height":64,
+                 "height":60,
                  "id":144,
                  "name":"Box",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":64,
+                 "width":60,
                  "x":256,
                  "y":192
                 }, 
                 {
                  "gid":69,
-                 "height":64,
+                 "height":60,
                  "id":161,
                  "name":"Box",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":64,
+                 "width":60,
                  "x":320,
                  "y":192
+                }, 
+                {
+                 "height":128,
+                 "id":162,
+                 "name":"Gate",
+                 "rotation":0,
+                 "type":"Gate",
+                 "visible":true,
+                 "width":64,
+                 "x":1536,
+                 "y":64
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -80,7 +99,7 @@
          "x":0,
          "y":0
         }],
- "nextobjectid":162,
+ "nextobjectid":164,
  "orientation":"orthogonal",
  "properties":
     {
