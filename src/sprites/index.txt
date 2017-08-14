@@ -1,0 +1,3 @@
+sprites_1.atlas
+sprites_2.atlas
+sprites_3.atlas

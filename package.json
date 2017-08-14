@@ -1,0 +1,11 @@
+{
+    "devDependencies": {
+        "gulp": "latest",
+        "gulp-if": "latest",
+        "gulp-clean": "latest",
+        "gulp-useref": "latest",
+        "gulp-sequence": "latest",
+        "gulp-clean-css": "latest",
+        "google-closure-compiler": "latest"
+    }
+}

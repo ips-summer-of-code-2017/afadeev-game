@@ -1,0 +1,27 @@
+{ "columns":8,
+ "image":"sprites\/test.png",
+ "imageheight":512,
+ "imagewidth":512,
+ "margin":0,
+ "name":"test",
+ "spacing":0,
+ "tilecount":64,
+ "tileheight":64,
+ "tiles":
+    {
+     "0":
+        {
+         "type":"Box"
+        },
+     "1":
+        {
+         "type":"Wall"
+        },
+     "2":
+        {
+         "type":"Character"
+        }
+    },
+ "tilewidth":64,
+ "type":"tileset"
+}
