@@ -142,11 +142,13 @@ class MovableObject extends GameObject {
         other.position = other.position
             .add(shifts[indexOfMin].multiply(-1 / 2));
         if (indexOfMin == 0 || indexOfMin == 2) {
-            this.speed.x *= 9 / 10;
-            other.speed.x *= 9 / 10;
+            let sum = this.speed.x + other.speed.x;
+            this.speed.x = sum / 2;
+            other.speed.x = sum / 2;
         } else {
-            this.speed.y *= 9 / 10;
-            other.speed.y *= 9 / 10;
+            let sum = this.speed.y + other.speed.y;
+            this.speed.y = sum / 2;
+            other.speed.y = sum / 2;
         }
     }
 }
@@ -596,11 +598,13 @@ class Game {
 
     tick() {
         try {
-            let deltaTime = this.timer.deltaTime;
+            const minFPS = 15;
+            const maxDeltaTime = 1 / minFPS;
+            let deltaTime = Math.min(this.timer.deltaTime, maxDeltaTime);
             this.timer.reset();
             this.update(deltaTime);
         } catch (error) {
-            console.log("fatal error:", error);
+            // console.log("fatal error:", error);
         }
         requestAnimationFrame(this.tick.bind(this));
     }

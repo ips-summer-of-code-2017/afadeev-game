@@ -23,14 +23,10 @@ class Keyboard {
      * @method @constructs Keyboard
      */
     constructor() {
-        this.pressed = {};
-        this.keyStatus = {};
-        // ["keydown", "keyup"].forEach((e) => {
-        //     window.addEventListener(e, this.update.bind(this));
-        // });
+        this.keyStatus = new Map();
         window.addEventListener("keydown", this.press.bind(this));
         window.addEventListener("keyup", this.unpress.bind(this));
-        this.callbacks = {};
+        this.callbacks = new Map();
     }
 
     /**
@@ -40,11 +36,10 @@ class Keyboard {
      * @param {Function} callback - Callback function
      */
     addHotkey(keyCode, callback) {
-        if (this.callbacks[keyCode]) {
-            this.callbacks[keyCode].push(callback);
-        } else {
-            this.callbacks[keyCode] = [callback];
+        if (!this.callbacks.get(keyCode)) { //if undefined
+            this.callbacks.set(keyCode, new Set());
         }
+        this.callbacks.get(keyCode).add(callback);
     }
 
     /**
@@ -53,9 +48,9 @@ class Keyboard {
      * @param {string} keyCode - Code of key
      */
     useHotkey(keyCode) {
-        if (this.callbacks[keyCode]) {
-            for (let index = 0; index < this.callbacks[keyCode].length; index++) {
-                this.callbacks[keyCode][index]();
+        if (this.callbacks.get(keyCode)) {
+            for (let callback of this.callbacks.get(keyCode)) {
+                callback();
             }
         }
     }
@@ -77,16 +72,16 @@ class Keyboard {
      */
     press(event) {
         const keyCode = event.code;
-        let keyStatus = this.keyStatus[keyCode];
-        if (!keyStatus) { // undefined
-            this.keyStatus[keyCode] = keyStatusEnum.Unpressed;
+        let keyStatus = this.keyStatus.get(keyCode);
+        if (!keyStatus) { // if undefined
+            this.keyStatus.set(keyCode, keyStatusEnum.Unpressed);
         }
         if (keyStatus == keyStatusEnum.Unpressed) {
-            this.keyStatus[keyCode] = keyStatusEnum.PressStarted;
+            this.keyStatus.set(keyCode, keyStatusEnum.PressStarted);
             this.useHotkey(keyCode);
             // console.log(`${keyCode} is pressed`);
         } else {
-            this.keyStatus[keyCode] = keyStatusEnum.Pressed;
+            this.keyStatus.set(keyCode, keyStatusEnum.Pressed);
         }
     }
 
@@ -97,7 +92,7 @@ class Keyboard {
      */
     unpress(event) {
         const keyCode = event.code;
-        this.keyStatus[keyCode] = keyStatusEnum.Unpressed;
+        this.keyStatus.set(keyCode, keyStatusEnum.Unpressed);
     }
 
     /**
@@ -107,9 +102,10 @@ class Keyboard {
      * @returns {boolean} 
      */
     isPressed(keyCode) {
-        const keyStatus = this.keyStatus[keyCode];
-        if (!keyStatus)
+        const keyStatus = this.keyStatus.get(keyCode);
+        if (!keyStatus) { // if undefined
             return false;
+        }
         return (keyStatus == keyStatusEnum.Pressed || keyStatus == keyStatusEnum.PressStarted);
     }
 }

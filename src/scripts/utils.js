@@ -69,6 +69,38 @@ let Utils = {
      * @returns {string}
      */
     substringAfter(text, searchString) {
-        return text.substring(text.indexOf(searchString) + 1)
+        return text.substring(text.indexOf(searchString) + 1);
+    },
+
+    /**
+     * @method substringBefore
+     * @description Returns substring from text preceding string to search
+     * @param {string} text - Original string
+     * @param {string} searchString - String after substring
+     * @returns {string}
+     */
+    substringBefore(text, searchString) {
+        return text.substring(0, text.indexOf(searchString));
+    },
+
+    /**
+     * 
+     * @param {string} path 
+     */
+    getFileDirectory(path) {
+        const indexOfLastSlash = path.lastIndexOf('/');
+        if (indexOfLastSlash >= 0) {
+            return path.substring(0, indexOfLastSlash + 1);
+        } else {
+            return "/";
+        }
+    },
+
+    /**
+     * 
+     * @param {string} path 
+     */
+    getFileName(path) {
+
     }
 }

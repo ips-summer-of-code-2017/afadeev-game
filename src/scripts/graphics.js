@@ -159,6 +159,15 @@ class Animation {
     }
 }
 
+/**
+ * @class AnimationsCollection
+ */
+class AnimationsCollection {
+    constructor(atlas) {
+        for (let name in atlas.sprites.keys()) {}
+    }
+}
+
 class AnimationController {
     constructor() {
         this.animations = new Map();
@@ -193,6 +202,13 @@ class AnimationController {
         if (this.currentAnimation) {
             this.currentAnimation.draw(this.frameIndex, location);
         }
+    }
+}
+
+class CharacterAnimationController extends AnimationController {
+    constructor(animationsColection) {
+        super();
+        this.addAnimation("idle", new Animation(atlas, "character/idle"));
     }
 }
 
@@ -276,17 +292,17 @@ class GameGraphics {
         this.atlas = new SpriteAtlas(this.context, "sprites");
         this.isInitalized = false;
         this.textures = {};
-        this.initalize()
+        this.initialize()
 
         this.fullScreen = false;
         this.width = 0;
         this.height = 0;
         this.size = new Vector(this.width, this.height);
-        this.resize();
         window.addEventListener("resize", this.resize.bind(this));
+        window.addEventListener("load", this.resize.bind(this));
     }
 
-    async initalize() {
+    async initialize() {
         await this.atlas.isLoaded;
         this.textures[Box.name] = this.atlas.sprites.get("test/1.png");
         this.textures[Wall.name] = this.atlas.sprites.get("tiles/wall.png");
@@ -328,13 +344,15 @@ class GameGraphics {
 
     resize() {
         const padding = 75;
-        this.width = this.fullScreen ? window.innerWidth : window.innerWidth - 2 * padding;
-        this.height = this.fullScreen ? window.innerHeight : window.innerHeight - 2 * padding;
+        // this.width = this.fullScreen ? window.innerWidth : window.innerWidth - 2 * padding;
+        // this.height = this.fullScreen ? window.innerHeight : window.innerHeight - 2 * padding;
+        this.width = this.canvas.scrollWidth;
+        this.height = this.canvas.scrollHeight;
         this.size = new Vector(this.width, this.height);
         this.canvas.width = this.width;
         this.canvas.height = this.height;
-        this.canvas.style.width = `${this.width}px`;
-        this.canvas.style.height = `${this.height}px`;
+        // this.canvas.style.width = `${this.width}px`;
+        // this.canvas.style.height = `${this.height}px`;
     }
 
     setCamera(camera) {
