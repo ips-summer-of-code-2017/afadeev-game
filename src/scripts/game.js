@@ -6,17 +6,32 @@
  */
 class GameObject {
     constructor() {
-        this.position = new Vector(0, 0);
+        this._position = new Vector(0, 0);
         // this.position = new Position(new Vector(null, null));
-        this.size = new Vector(0, 0);
+        this._size = new Vector(0, 0);
+        this.boundaryRectangle = new Rectangle(this.position, this.size);
+    }
+
+    set position(position) {
+        this._position = position;
+        this.boundaryRectangle = new Rectangle(this.position, this.size);
+    }
+
+    get position() {
+        return this._position;
+    }
+
+    set size(size) {
+        this._size = size;
+        this.boundaryRectangle = new Rectangle(this.position, this.size);
+    }
+
+    get size() {
+        return this._size;
     }
 
     get type() {
         return this.constructor.name;
-    }
-
-    get boundaryRectangle() {
-        return new Rectangle(this.position, this.size);
     }
 
     update(deltaTime) {
@@ -159,6 +174,11 @@ class Character extends MovableObject {
         this.dead = false;
         this.walkAcceleration = 5000;
         this.movementController = null;
+        this.animationController = null;
+    }
+
+    initAnimationController(animationsCollection) {
+        this.animationController = new CharacterAnimationController(animationsCollection);
     }
 
     setMovementController(movementController) {
@@ -172,7 +192,6 @@ class Character extends MovableObject {
 
     die() {
         this.dead = true;
-        console.log("Character is dead")
     }
 
     /**
@@ -181,6 +200,11 @@ class Character extends MovableObject {
     collide(object) {
         switch (object.type) {
             case objectTypeEnum.Wall:
+                {
+                    this.bump(object);
+                    break;
+                }
+            case objectTypeEnum.Piston:
                 {
                     this.bump(object);
                     break;
@@ -197,6 +221,18 @@ class Character extends MovableObject {
                 }
         }
     }
+
+    update(deltaTime) {
+        super.update(deltaTime);
+        if (this.animationController) {
+            this.animationController.update(deltaTime);
+            this.animationController.walk();
+        }
+    }
+
+    draw() {
+        this.animationController.draw(this.boundaryRectangle);
+    }
 }
 
 class Box extends MovableObject {
@@ -208,6 +244,11 @@ class Box extends MovableObject {
             case objectTypeEnum.Character:
                 {
                     this.halfBump(object);
+                    break;
+                }
+            case objectTypeEnum.Piston:
+                {
+                    this.bump(object);
                     break;
                 }
             case objectTypeEnum.Wall:
@@ -224,21 +265,137 @@ class Box extends MovableObject {
     }
 }
 
-class Wall extends GameObject {
-    constructor() {
-        super();
+class Wall extends GameObject {}
+
+class Spikes extends GameObject {}
+
+class Gate extends GameObject {}
+
+class NetworkGameObject extends Utils.mix(GameObject, NetworkElement) {
+    onSignalUpdate() {
+        this.animationController.setIsActive(this.isActive);
+    }
+
+    draw() {
+        this.animationController.draw(this.boundaryRectangle);
     }
 }
 
-class Spikes extends GameObject {
-    constructor() {
-        super();
+class Plate extends NetworkGameObject {
+    initAnimationController(animationsCollection) {
+        this.animationController = new PlateAnimationController(animationsCollection);
+        this.onSignalUpdate();
+        this.wasActivated = false;
+    }
+
+    update(deltaTime) {
+        if (!this.wasActivated) {
+            this.forceIsActive(false);
+        }
+        this.wasActivated = false;
+    }
+
+    collide(object) {
+        switch (object.type) {
+            case objectTypeEnum.Character:
+                {
+                    this.forceIsActive(true);
+                    this.wasActivated = true;
+                    break;
+                }
+            case objectTypeEnum.Box:
+                {
+                    this.forceIsActive(true);
+                    this.wasActivated = true;
+                    break;
+                }
+        }
     }
 }
 
-class Gate extends GameObject {
+class Lever extends NetworkGameObject {
+    initAnimationController(animationsCollection) {
+        this.animationController = new LeverAnimationController(animationsCollection);
+        this.onSignalUpdate();
+    }
+
+    update(deltaTime) {
+        this.forceIsActive(false);
+    }
+
+    collide(object) {
+        switch (object.type) {
+            case objectTypeEnum.Character:
+                {
+                    this.forceIsActive(true);
+                    break;
+                }
+            case objectTypeEnum.Box:
+                {
+                    this.forceIsActive(true);
+                    break;
+                }
+        }
+    }
+}
+
+class Lamp extends NetworkGameObject {
     constructor() {
         super();
+    }
+
+    initAnimationController(animationsCollection) {
+        this.animationController = new LampAnimationController(animationsCollection);
+        this.onSignalUpdate();
+    }
+}
+
+class Piston extends NetworkGameObject {
+    constructor() {
+        super();
+        this.progress = 0;
+        this.speed = -1;
+        this.deltaLength = null;
+        this.direction = null;
+        this.startCoordinate = null;
+    }
+
+    initAnimationController(animationsCollection) {
+        this.animationController = new PistonAnimationController(animationsCollection);
+        this.onSignalUpdate();
+    }
+
+    setProgress(progress) {
+        if (this.direction) {
+            this.progress = progress;
+            this.progress = Utils.bound(this.progress, 0, 1);
+            const newCoordinate = this.startCoordinate + this.deltaLength * this.progress;
+            this.boundaryRectangle[this.direction] = newCoordinate;
+        }
+    }
+
+    configure(direction, deltaLength) {
+        this.setProgress(0);
+        this.direction = direction;
+        this.deltaLength = deltaLength;
+        this.startCoordinate = this.boundaryRectangle[direction];
+    }
+
+    onSignalUpdate() {
+        super.onSignalUpdate();
+        if (this.direction) {
+            if (this.isActive) {
+                this.speed = Math.abs(this.speed);
+            } else {
+                this.speed = -Math.abs(this.speed);
+            }
+        }
+    }
+
+    update(deltaTime) {
+        if (this.direction) {
+            this.setProgress(this.progress + this.speed * deltaTime);
+        }
     }
 }
 
@@ -246,19 +403,30 @@ class ObjectFactory {
     constructor(params) {
         this.keyboard = params.keyboard;
         this.movementController = params.movementController;
+        this.animationsCollection = params.animationsCollection;
     }
 
-    getObject(type, position, size) {
-        let objectClass = objectClassEnum[type];
+    getObject(type, position, size, data) {
+        const objectClass = objectClassEnum[type];
         let object = new objectClass();
         object.position = position;
         object.size = size;
+        const animationControllerClass = animationControllerEnum[type];
+        if (animationControllerClass) {
+            object.initAnimationController(this.animationsCollection);
+        }
         if (type == "Character") {
             object.setMovementController(this.movementController);
         }
         if (type == "Character" || type == "Box") {
             object.setAirResistance(-10);
             object.setFreeFallAcceleration(2500);
+        }
+        if (type == "Piston") {
+            object.configure(
+                data.properties.direction,
+                data.properties.deltaLength
+            );
         }
         return object;
     }
@@ -274,6 +442,16 @@ let objectClassEnum = {
     Wall: Wall,
     Spikes: Spikes,
     Gate: Gate,
+    Lamp: Lamp,
+    Plate: Plate,
+    Piston: Piston
+}
+
+let animationControllerEnum = {
+    Character: CharacterAnimationController,
+    Lamp: LampAnimationController,
+    Plate: PlateAnimationController,
+    Piston: PistonAnimationController
 }
 
 /**
@@ -286,6 +464,9 @@ let objectTypeEnum = {
     Wall: Wall.name,
     Spikes: Spikes.name,
     Gate: Gate.name,
+    Lamp: Lamp.name,
+    Plate: Plate.name,
+    Piston: Piston.name
 }
 
 /**
@@ -432,11 +613,13 @@ class WorldStateFactory {
             // const tilesCount = tileset.tiles.length;
             const firstIndex = tileset.firstgid;
             const tiles = tileset.tiles;
-            for (let tileIndex = 0; tiles[tileIndex] !== undefined; tileIndex++) {
-                const tile = tiles[tileIndex];
-                const name = tile.type;
-                // const name = tile.objectgroup.name;
-                tileMapping[firstIndex + tileIndex] = name;
+            if (tiles) {
+                for (let tileIndex = 0; tiles[tileIndex] !== undefined; tileIndex++) {
+                    const tile = tiles[tileIndex];
+                    const name = tile.type;
+                    // const name = tile.objectgroup.name;
+                    tileMapping[firstIndex + tileIndex] = name;
+                }
             }
         }
         return tileMapping;
@@ -474,6 +657,7 @@ class WorldStateFactory {
 
     parseObjects(data, worldState) {
         let tileMapping = this.getTileMapping(data);
+        let networkBuilder = new NetworkBuilder();
 
         const layersCount = data.layers.length;
         for (let layerIndex = 0; layerIndex < layersCount; layerIndex++) {
@@ -486,12 +670,25 @@ class WorldStateFactory {
                     if (type) {
                         const size = new Vector(objectData.width, objectData.height);
                         const position = new Vector(objectData.x, objectData.y - size.y);
-                        let object = this.objectFactory.getObject(type, position, size);
+                        let object = this.objectFactory.getObject(type, position, size, objectData);
                         worldState.addObject(object);
+
+                        if (objectData.properties && objectData.properties.id) {
+                            let signalsString = objectData.properties.signals;
+                            let signals = signalsString ? signalsString.split(',') : [];
+                            networkBuilder.addElement(
+                                object,
+                                objectData.properties.id,
+                                signals,
+                                objectData.properties.combiner
+                            )
+                        }
                     }
                 }
             }
         }
+
+        networkBuilder.buildNetwork();
     }
 
     async toWorldState(level) {
@@ -515,7 +712,7 @@ class GameState {
         this.worldState = null;
         this.levels = new Map();
         this.isLoaded = false;
-        this.loadLevel("level_1");
+        this.loadLevel("level_2");
     }
 
     getLevel(name) {
@@ -578,7 +775,8 @@ class Game {
         this.state = new GameState({
             keyboard: this.keyboard,
             movementController: this.movementController,
-        })
+            animationsCollection: this.graphics.animationsCollection,
+        });
         this.initHotkeys();
     }
 
@@ -604,7 +802,7 @@ class Game {
             this.timer.reset();
             this.update(deltaTime);
         } catch (error) {
-            // console.log("fatal error:", error);
+            console.log("fatal error:", error);
         }
         requestAnimationFrame(this.tick.bind(this));
     }

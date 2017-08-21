@@ -1,0 +1,6 @@
+textures: sprites_4.png
+character/anim_dmg_air/0.png	0	0	18	43	9	21	32	64	
+character/anim_jump/1.png	18	0	18	42	10	20	32	64	
+character/anim_idle/0.png	36	0	16	46	7	18	32	64	
+character/anim_walk/5.png	52	0	9	46	11	18	32	64	
+character/anim_dead/02.png	0	43	18	7	0	57	32	64	

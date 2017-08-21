@@ -7,7 +7,7 @@ let Combiner = new Enum(
     "manual",
     "anyof",
     "allof",
-    "noneof",
+    "noneof"
 );
 
 class AbstractCombiner {
@@ -99,9 +99,14 @@ class NetworkElement {
         this._setIsActive(isActive)
     }
 
+    onSignalUpdate() {
+        // do nothing
+    }
+
     _setIsActive(isActive) {
         if (isActive != this.isActive) {
             this.isActive = isActive;
+            this.onSignalUpdate();
             for (let receiver of this.receivers) {
                 receiver.signal()
             }
@@ -120,14 +125,14 @@ class NetworkBuilder {
 
     /**
      * 
-     * @param {NetworkElement} elem 
+     * @param {NetworkElement} element 
      * @param {Array<String>} signals
      * @param {String} combiner - combiner function name, see Combiner enum
      */
     addElement(element, name, signals, combiner) {
         this.elements.set(name, {
             element: element,
-            signals: signals,
+            signals: signals.map(Utils.trim),
             combiner: combiner,
         });
     }

@@ -16,10 +16,15 @@ body {
     font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
 }
 
-.game_canvas {
-    display: block;
+.game_canvas_wrapper {
     height: 90%;
     width: 95%;
+}
+
+.game_canvas {
+    display: block;
+    height: 100%;
+    width: 100%;
     margin: 0 auto;
 }
 

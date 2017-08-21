@@ -1,3 +1,5 @@
 sprites_1.atlas
 sprites_2.atlas
 sprites_3.atlas
+sprites_4.atlas
+sprites_5.atlas

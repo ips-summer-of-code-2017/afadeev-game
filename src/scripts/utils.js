@@ -69,7 +69,7 @@ let Utils = {
      * @returns {string}
      */
     substringAfter(text, searchString) {
-        return text.substring(text.indexOf(searchString) + 1);
+        return text.substring(text.lastIndexOf(searchString) + 1);
     },
 
     /**
@@ -89,11 +89,7 @@ let Utils = {
      */
     getFileDirectory(path) {
         const indexOfLastSlash = path.lastIndexOf('/');
-        if (indexOfLastSlash >= 0) {
-            return path.substring(0, indexOfLastSlash + 1);
-        } else {
-            return "/";
-        }
+        return path.substring(0, indexOfLastSlash + 1);
     },
 
     /**
@@ -101,6 +97,96 @@ let Utils = {
      * @param {string} path 
      */
     getFileName(path) {
+        const indexOfLastSlash = path.lastIndexOf('/');
+        return path.substring(indexOfLastSlash + 1);
+    },
 
+    /**
+     * @method copyProperties
+     * @desc Copies own properties from source object to target object
+     * @param {Object} target 
+     * @param {Object} source 
+     */
+    copyProperties(target = {}, source = {}) {
+        const ownPropertyNames = Object.getOwnPropertyNames(source);
+
+        ownPropertyNames
+            .filter(key => !/^(prototype|name|constructor)$/.test(key))
+            .forEach(key => {
+                const desc = Object.getOwnPropertyDescriptor(source, key);
+                Object.defineProperty(target, key, desc);
+            });
+    },
+
+    /**
+     * @method mix
+     * @desc Returns combination of classes from arguments list
+     * @param {...function()} mixins - List of classes
+     * @returns {function()}
+     */
+    mix(...mixins) {
+        class Mix {
+            constructor(...args) {
+                for (let mixin of mixins) {
+                    const newMixin = new mixin(...args);
+                    Utils.copyProperties(this, newMixin);
+                    Utils.copyProperties(this.prototype, newMixin.prototype);
+                }
+            }
+        }
+
+        for (let mixin of mixins) {
+            Utils.copyProperties(Mix, mixin);
+            Utils.copyProperties(Mix.prototype, mixin.prototype);
+        }
+
+        return Mix;
+    },
+
+    trim(string) {
+        return string.trim();
+    },
+
+    bound(value, min, max) {
+        return Math.min(max, Math.max(value, min));
     }
 }
+
+// class Foo {
+//     constructor() {
+//         console.log("Foo");
+//     }
+
+//     foo() {
+//         console.log("foo");
+//     }
+// }
+
+// class Bar {
+//     constructor() {
+//         console.log("Bar");
+//     }
+
+//     bar() {
+//         console.log("bar");
+//     }
+// }
+
+// class Baz extends Utils.mix(Foo, Bar) {
+//     constructor() {
+//         super();
+//         console.log("Baz");
+//     }
+
+//     baz() {
+//         console.log("baz");
+//     }
+// }
+
+// // let bar = new Bar();
+// // bar.bar();
+
+// let baz = new Baz();
+// baz.foo();
+// baz.bar();
+// baz.baz();

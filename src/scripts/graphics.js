@@ -50,6 +50,7 @@ class SpriteAtlas {
         this.context = context;
         this.name = atlasName;
         this.sprites = new Map();
+        // this.animations = new AnimationsAtlas();
         this.isLoaded = this.load();
     }
 
@@ -70,19 +71,14 @@ class SpriteAtlas {
         return (sprite ? sprite : null);
     }
 
-    load() {
-        return this.fetchSprite('index.txt').then((text) => {
-            const lines = Utils.splitIntoNonEmptyLines(text);
-            const sprites = lines.map((line) => {
-                return this.fetchSprite(line).then((text) => {
-                    return this.loadSpriteContent(text);
-                });
-            });
-            return Promise.all(sprites);
-        }).catch((error) => {
-            alert(error);
-            throw error;
-        });
+    fetchSprite(name) {
+        return fetch(`sprites/${name}`).then((response) => {
+            if (response.ok) {
+                return response.text();
+            } else {
+                throw new Error(`Sprite "${name}" load failed with status ${response.status}`);
+            }
+        })
     }
 
     loadSpriteContent(text) {
@@ -110,20 +106,75 @@ class SpriteAtlas {
         });
     }
 
-    fetchSprite(name) {
-        return fetch(`sprites/${name}`).then((response) => {
-            if (response.ok) {
-                return response.text();
-            } else {
-                throw new Error(`Sprite "${name}" load failed with status ${response.status}`);
-            }
-        })
+    load() {
+        return this.fetchSprite('index.txt').then((text) => {
+            const lines = Utils.splitIntoNonEmptyLines(text);
+            const sprites = lines.map((line) => {
+                return this.fetchSprite(line).then((text) => {
+                    return this.loadSpriteContent(text);
+                });
+            });
+            return Promise.all(sprites);
+        }).catch((error) => {
+            alert(error);
+            throw error;
+        });
     }
 
-    draw(spriteName, location) {
+    draw(spriteName, rectangle) {
         let sprite = this.getSprite(spriteName);
         if (sprite) {
-            sprite.draw(location);
+            sprite.draw(rectangle);
+        }
+    }
+}
+
+/**
+ * @class AnimationsCollection
+ */
+class AnimationsCollection {
+    constructor(atlas) {
+        this.atlas = atlas;
+        this.animations = new Map();
+        this.onload = () => {};
+        this.isLoaded = new Promise((resolve, reject) => {
+            this.onload = resolve;
+        });
+        this.load();
+    }
+
+    async load() {
+        await this.atlas.isLoaded;
+        let animationPaths = new Set();
+        for (let name of this.atlas.sprites.keys()) {
+            const dir = Utils.getFileDirectory(name);
+            if (this.isAnimationPath(dir)) {
+                if (!animationPaths.has(dir)) {
+                    console.log(`Found animation ${dir}`);
+                }
+                animationPaths.add(dir);
+            }
+        }
+
+        for (let path of animationPaths) {
+            this.animations.set(path, new Animation(this.atlas, path));
+        }
+
+        this.onload();
+    }
+
+    getAnimation(name) {
+        return this.animations.get(name);
+    }
+
+    isAnimationPath(dir) {
+        const dirComponents = dir.split('/');
+        if (dirComponents.length >= 2) {
+            const indexOfAnimationName = dirComponents.length - 2;
+            const keyword = "anim";
+            return (dirComponents[indexOfAnimationName].indexOf(keyword) == 0);
+        } else {
+            return false;
         }
     }
 }
@@ -139,11 +190,10 @@ class Animation {
 
     async initalize() {
         await this.atlas.isLoaded;
-        let sprite;
+        let sprite = this.atlas.getSprite(`${this.name}${this.length}.png`);
         do {
-            sprite = this.atlas.getSprite(`${this.name}/${this.length}.png`);
             this.sprites.push(sprite);
-            this.length += 1;
+            sprite = this.atlas.getSprite(`${this.name}${this.length}.png`);
         } while (sprite);
         this.isInitialized = true;
     }
@@ -152,38 +202,30 @@ class Animation {
         return this.sprites.length;
     }
 
-    draw(index, location) {
+    draw(index, rectangle) {
         if (this.isInitialized) {
-            this.sprite[index].draw(location);
+            this.sprites[index].draw(rectangle);
         }
     }
 }
 
-/**
- * @class AnimationsCollection
- */
-class AnimationsCollection {
-    constructor(atlas) {
-        for (let name in atlas.sprites.keys()) {}
-    }
-}
-
 class AnimationController {
-    constructor() {
-        this.animations = new Map();
+    constructor(animationsCollection) {
+        this.animationsCollection = animationsCollection;
         this.currentAnimation = null;
         this.frameIndex = null;
         this.progress = null;
+        this.setFramerate(15);
     }
 
-    addAnimation(name, animation) {
-        this.animations.add(name, animation);
-    }
-
-    setAnimation(name) {
-        this.currentAnimation = this.animations.get(name);
-        this.frameIndex = 0;
-        this.progress = 0;
+    async setAnimation(name) {
+        await this.animationsCollection.isLoaded;
+        let animation = this.animationsCollection.getAnimation(name);
+        if (animation != this.currentAnimation) {
+            this.currentAnimation = animation;
+            this.frameIndex = 0;
+            this.progress = 0;
+        }
     }
 
     setFramerate(framerate) {
@@ -191,24 +233,69 @@ class AnimationController {
     }
 
     update(deltaTime) {
-        this.progress += deltaTime;
-        const deltaFrames = Math.floor(this.progress * this.framerate);
-        this.progress %= (1 / this.framerate);
-        this.frameIndex += deltaFrames;
-        this.frameIndex %= this.currentAnimation.length;
+        if (this.currentAnimation) {
+            this.progress += deltaTime;
+            const deltaFrames = Math.floor(this.progress * this.framerate);
+            this.progress %= (1 / this.framerate);
+            this.frameIndex += deltaFrames;
+            this.frameIndex %= this.currentAnimation.length;
+        }
     }
 
-    draw(location) {
-        if (this.currentAnimation) {
-            this.currentAnimation.draw(this.frameIndex, location);
+    draw(rectangle) {
+        if (this.currentAnimation && !Utils.isNull(this.frameIndex)) {
+            this.currentAnimation.draw(this.frameIndex, rectangle);
         }
     }
 }
 
 class CharacterAnimationController extends AnimationController {
-    constructor(animationsColection) {
-        super();
-        this.addAnimation("idle", new Animation(atlas, "character/idle"));
+    idle() {
+        this.setAnimation("character/anim_idle/");
+    }
+
+    walk() {
+        this.setAnimation("character/anim_walk/");
+    }
+}
+
+class LampAnimationController extends AnimationController {
+    setIsActive(isActive) {
+        if (isActive) {
+            this.setAnimation("lamp/anim_on/");
+        } else {
+            this.setAnimation("lamp/anim_off/");
+        }
+    }
+}
+
+class PlateAnimationController extends AnimationController {
+    setIsActive(isActive) {
+        if (isActive) {
+            this.setAnimation("plate/anim_on/");
+        } else {
+            this.setAnimation("plate/anim_off/");
+        }
+    }
+}
+
+class LevelAnimationController extends AnimationController {
+    setIsActive(isActive) {
+        if (isActive) {
+            this.setAnimation("lever/anim_on/");
+        } else {
+            this.setAnimation("lever/anim_off/");
+        }
+    }
+}
+
+class PistonAnimationController extends AnimationController {
+    setIsActive(isActive) {
+        if (isActive) {
+            this.setAnimation("piston/anim_on/");
+        } else {
+            this.setAnimation("piston/anim_off/");
+        }
     }
 }
 
@@ -290,6 +377,7 @@ class GameGraphics {
         this.camera = null;
 
         this.atlas = new SpriteAtlas(this.context, "sprites");
+        this.animationsCollection = new AnimationsCollection(this.atlas);
         this.isInitalized = false;
         this.textures = {};
         this.initialize()
@@ -308,7 +396,7 @@ class GameGraphics {
         this.textures[Wall.name] = this.atlas.sprites.get("tiles/wall.png");
         this.textures[Spikes.name] = this.atlas.sprites.get("tiles/spikes.png");
         this.textures[GameObject.name] = this.atlas.sprites.get("test/4.png");
-        this.textures[Character.name] = this.atlas.sprites.get("character/idle/0.png");
+        this.textures[Character.name] = this.atlas.sprites.get("character/anim_idle/0.png");
         this.textures.background = this.atlas.sprites.get("tiles/background.png");
         this.isInitalized = true;
     }
@@ -360,7 +448,11 @@ class GameGraphics {
     }
 
     drawObject(object) {
-        this.textures[object.type].draw(object.boundaryRectangle);
+        if (object.draw) {
+            object.draw();
+        } else {
+            this.textures[object.type].draw(object.boundaryRectangle);
+        }
     }
 
     drawBackground() {

@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="styles/game.css">
   <!-- endbuild-->
 
-  <!-- build: js-->
+  <!-- build:js js/all.js-->
   <script src="scripts/utils.js" defer></script>
   <script src="scripts/enum.js" defer></script>
   <script src="scripts/vector.js" defer></script>
@@ -30,7 +30,9 @@
 <body>
   <div class="wrapper">
     <h1 class="title">Gateman</h1>
-    <canvas class="game_canvas" id="gameCanvas"> Your browser does not support canvas </canvas>
+    <div class="game_canvas_wrapper">
+      <canvas class="game_canvas" id="gameCanvas"> Your browser does not support canvas </canvas>
+    </div>
   </div>
 </body>
 

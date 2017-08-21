@@ -54,76 +54,76 @@ let EntityCategoryEnum = new Enum(
     "Wall"
 );
 
-class Entity {
-    constructor() {
-        this.components = new Map();
-    }
+// class Entity {
+//     constructor() {
+//         this.components = new Map();
+//     }
 
-    setProperty(name, value) {
-        this.components.set(name, value);
-    }
+//     setProperty(name, value) {
+//         this.components.set(name, value);
+//     }
 
-    getProperty(name) {
-        return this.components.get(name);
-    }
+//     getProperty(name) {
+//         return this.components.get(name);
+//     }
 
-    deleteProperty(name) {
-        this.components.delete(name);
-    }
+//     deleteProperty(name) {
+//         this.components.delete(name);
+//     }
 
-    update(deltaTime) {
-        switch (this.getProperty(category)) {
-            case EntityCategoryEnum.Box:
-                this.updateBox();
-                break;
-            case EntityCategoryEnum.Character:
-                this.updateCharacter();
-                break;
-        }
-    }
+//     update(deltaTime) {
+//         switch (this.getProperty(category)) {
+//             case EntityCategoryEnum.Box:
+//                 this.updateBox();
+//                 break;
+//             case EntityCategoryEnum.Character:
+//                 this.updateCharacter();
+//                 break;
+//         }
+//     }
 
-    updateBox() {
+//     updateBox() {
 
-    }
+//     }
 
-    updateCharacter() {
+//     updateCharacter() {
 
-    }
-}
+//     }
+// }
 
-class EntityFactory {
-    constructor(params) {
-        this.params = params;
-    }
+// class EntityFactory {
+//     constructor(params) {
+//         this.params = params;
+//     }
 
-    getBasicEntity(params) {
-        let entity = new Entity();
-        entity.setProperty(position, params.position);
-        entity.setProperty(size, params.position);
-    }
+//     getBasicEntity(params) {
+//         let entity = new Entity();
+//         entity.setProperty(position, params.position);
+//         entity.setProperty(size, params.position);
+//     }
 
-    getWall(params) {
-        let entity = getBasicEntity(params);
-        entity.setProperty(category, EntityCategoryEnum.Wall);
-        entity.setProperty(appearance, params.graphics.atlas.sprites["tiles/wall.png"]);
-    }
+//     getWall(params) {
+//         let entity = getBasicEntity(params);
+//         entity.setProperty(category, EntityCategoryEnum.Wall);
+//         entity.setProperty(appearance, params.graphics.atlas.sprites["tiles/wall.png"]);
+//     }
 
-    getEntity(category, params) {
-        switch (category) {
-            case EntityCategoryEnum.Wall:
-                return getWall(params);
-            case EntityCategoryEnum.Box:
-                return getBox(params);
-            case EntityCategoryEnum.Character:
-                return getCharacter(params);
-            case EntityCategoryEnum.Spikes:
-                return getSpikes(params);
-        }
-    }
-}
+//     getEntity(category, params) {
+//         switch (category) {
+//             case EntityCategoryEnum.Wall:
+//                 return getWall(params);
+//             case EntityCategoryEnum.Box:
+//                 return getBox(params);
+//             case EntityCategoryEnum.Character:
+//                 return getCharacter(params);
+//             case EntityCategoryEnum.Spikes:
+//                 return getSpikes(params);
+//         }
+//     }
+// }
 
-class RenderSystem {
-    constructor() {
+// class RenderSystem {
+//     constructor() {
 
-    }
-}
+//     }
+// }
