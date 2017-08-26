@@ -214,6 +214,7 @@ class AnimationController {
         this.animationsCollection = animationsCollection;
         this.currentAnimation = null;
         this.frameIndex = null;
+        // progress of current frame in range [0..1]
         this.progress = null;
         this.setFramerate(15);
     }
@@ -290,6 +291,16 @@ class LevelAnimationController extends AnimationController {
 }
 
 class PistonAnimationController extends AnimationController {
+    setIsActive(isActive) {
+        if (isActive) {
+            this.setAnimation("piston/anim_on/");
+        } else {
+            this.setAnimation("piston/anim_off/");
+        }
+    }
+}
+
+class PlatformAnimationController extends AnimationController {
     setIsActive(isActive) {
         if (isActive) {
             this.setAnimation("piston/anim_on/");
@@ -447,9 +458,27 @@ class GameGraphics {
         this.camera = camera;
     }
 
+    drawLine(pointA, pointB, color, position) {
+        this.context.strokeStyle = color;
+        this.context.lineWidth = 3;
+        this.context.beginPath();
+        this.context.moveTo(pointA.x + position.x, pointA.y + position.y);
+        this.context.lineTo(pointB.x + position.x, pointB.y + position.y);
+        this.context.stroke();
+        // debugger
+    }
+
+    drawPolyline(polyline, color, position = new Vector(0, 0)) {
+        for (let index = 1; index < polyline.length; index++) {
+            this.drawLine(polyline[index - 1], polyline[index], color, position);
+        }
+    }
+
     drawObject(object) {
         if (object.draw) {
             object.draw();
+        } else if (object.polyline) {
+            this.drawPolyline(object.polyline, object.color, object.position);
         } else {
             this.textures[object.type].draw(object.boundaryRectangle);
         }

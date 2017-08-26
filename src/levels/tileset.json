@@ -8,7 +8,7 @@
  "margin":0,
  "name":"TilesetTest",
  "spacing":0,
- "tilecount":8,
+ "tilecount":9,
  "tileheight":128,
  "tiles":
     {
@@ -63,6 +63,12 @@
          "image":"..\/sprites\/all\/lamp\/anim_on\/0.png",
          "imageheight":128,
          "imagewidth":128
+        },
+     "8":
+        {
+         "image":"..\/sprites\/all\/plate\/anim_off\/0.png",
+         "imageheight":16,
+         "imagewidth":64
         }
     },
  "tilewidth":128,

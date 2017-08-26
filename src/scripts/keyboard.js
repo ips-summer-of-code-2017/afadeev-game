@@ -108,4 +108,22 @@ class Keyboard {
         }
         return (keyStatus == keyStatusEnum.Pressed || keyStatus == keyStatusEnum.PressStarted);
     }
+
+    anyPressed(keyCodes) {
+        for (let keyCode of keyCodes) {
+            if (this.isPressed(keyCode)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    allPressed(keyCodes) {
+        for (let keyCode of keyCodes) {
+            if (!this.isPressed(keyCode)) {
+                return false;
+            }
+        }
+        return true;
+    }
 }

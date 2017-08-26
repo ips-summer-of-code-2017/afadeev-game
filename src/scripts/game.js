@@ -9,12 +9,12 @@ class GameObject {
         this._position = new Vector(0, 0);
         // this.position = new Position(new Vector(null, null));
         this._size = new Vector(0, 0);
-        this.boundaryRectangle = new Rectangle(this.position, this.size);
+        this.boundaryRectangle = new Rectangle(this._position, this.size);
     }
 
     set position(position) {
         this._position = position;
-        this.boundaryRectangle = new Rectangle(this.position, this.size);
+        this.boundaryRectangle = new Rectangle(this._position, this.size);
     }
 
     get position() {
@@ -23,7 +23,7 @@ class GameObject {
 
     set size(size) {
         this._size = size;
-        this.boundaryRectangle = new Rectangle(this.position, this.size);
+        this.boundaryRectangle = new Rectangle(this._position, this.size);
     }
 
     get size() {
@@ -58,19 +58,27 @@ class MovableObject extends GameObject {
         super();
         this.speed = new Vector(0, 0);
         this.freeFallAcceleration = new Vector(0, 0);
-        this.airResistance = 0;
+        this.airResistance = new Vector(0, 0);
     }
 
     setFreeFallAcceleration(acceleration) {
         this.freeFallAcceleration = new Vector(0, acceleration);
     }
 
-    setAirResistance(resistance) {
-        this.airResistance = resistance;
+    setAirResistance(resistanceX, resistanceY = resistanceX) {
+        this.airResistance = new Vector(resistanceX, resistanceY);
+    }
+
+    setMaxSpeed(maxSpeed) {
+        this.maxSpeed = maxSpeed;
     }
 
     get acceleration() {
-        return this.freeFallAcceleration.add(this.speed.multiply(this.airResistance));
+        const resistanceAcceleration = new Vector(
+            this.speed.x * this.airResistance.x,
+            this.speed.y * this.airResistance.y
+        );
+        return this.freeFallAcceleration.add(resistanceAcceleration);
     }
 
     update(deltaTime) {
@@ -78,38 +86,40 @@ class MovableObject extends GameObject {
             .add(this.speed.multiply(deltaTime));
         this.speed = this.speed
             .add(this.acceleration.multiply(deltaTime));
+        if (this.maxSpeed) {
+            this.speed.x = Utils.bound(this.speed.x, -this.maxSpeed.x, this.maxSpeed.x);
+            this.speed.y = Utils.bound(this.speed.y, -this.maxSpeed.y, this.maxSpeed.y);
+        }
     }
 
-    // collisionDirection(other) {
-    //     const rectA = this.boundaryRectangle;
-    //     const rectB = other.boundaryRectangle;
-    //     let shifts = {
-    //         [DirectionEnum.Right]: new Vector(rectB.right - rectA.left, 0),
-    //         [DirectionEnum.Up]: new Vector(0, rectB.up - rectA.down),
-    //         [DirectionEnum.Left]: new Vector(rectB.left - rectA.right, 0),
-    //         [DirectionEnum.Down]: new Vector(0, rectB.down - rectA.up),
-    //     };
-    //     let lengths = {};
-    //     debugger;
-    //     for (let direction in shifts) {
-    //         lengths[direction] = shifts[direction].length;
-    //         debugger;
-    //     }
-    //     let shortestDirection = DirectionEnum.Right;
-    //     for (let direction in lengths) {
-    //         if (lengths[direction] < lengths[shortestDirection]) {
-    //             shortestDirection = direction;
-    //         }
-    //         debugger;
-    //     }
-    //     return shortestDirection;
-    // }
+    collisionDirection(other) {
+        const rectA = this.boundaryRectangle;
+        const rectB = other.boundaryRectangle;
+        let shifts = {
+            [DirectionEnum.Right]: new Vector(rectB.right - rectA.left, 0),
+            [DirectionEnum.Up]: new Vector(0, rectB.up - rectA.down),
+            [DirectionEnum.Left]: new Vector(rectB.left - rectA.right, 0),
+            [DirectionEnum.Down]: new Vector(0, rectB.down - rectA.up),
+        };
+        let lengths = {};
+        for (let direction of DirectionEnum) {
+            lengths[direction] = shifts[direction].length;
+        }
+        let shortestDirection = DirectionEnum.Right;
+        for (let direction of DirectionEnum) {
+            if (lengths[direction] < lengths[shortestDirection]) {
+                shortestDirection = direction;
+            }
+        }
+        return shortestDirection;
+    }
 
     /**
      * Pushes away this from other object on contact
      * @param {GameObject} other
      */
     bump(other) {
+        // console.log(this.collisionDirection(other));
         const rectA = this.boundaryRectangle;
         const rectB = other.boundaryRectangle;
         let shifts = [
@@ -136,34 +146,39 @@ class MovableObject extends GameObject {
     }
 
     halfBump(other) {
-        const rectA = this.boundaryRectangle;
-        const rectB = other.boundaryRectangle;
-        let shifts = [
-            new Vector(rectB.right - rectA.left, 0), // right
-            new Vector(0, rectB.up - rectA.down), // up
-            new Vector(rectB.left - rectA.right, 0), // left
-            new Vector(0, rectB.down - rectA.up), // down
-        ];
-        let lengths = shifts.map((vec) => vec.length);
-        let indexOfMin = 0;
-        for (let index = 1; index < lengths.length; index++) {
-            if (lengths[index] < lengths[indexOfMin]) {
-                indexOfMin = index;
+        const direction = this.collisionDirection(other);
+        if (direction == DirectionEnum.Up) {
+            this.bump(other);
+        } else if (direction != DirectionEnum.Down) {
+            const rectA = this.boundaryRectangle;
+            const rectB = other.boundaryRectangle;
+            let shifts = [
+                new Vector(rectB.right - rectA.left, 0), // right
+                new Vector(0, rectB.up - rectA.down), // up
+                new Vector(rectB.left - rectA.right, 0), // left
+                new Vector(0, rectB.down - rectA.up), // down
+            ];
+            let lengths = shifts.map((vec) => vec.length);
+            let indexOfMin = 0;
+            for (let index = 1; index < lengths.length; index++) {
+                if (lengths[index] < lengths[indexOfMin]) {
+                    indexOfMin = index;
+                }
             }
-        }
-        // console.log(indexOfMin, this.collisionDirection(other));
-        this.position = this.position
-            .add(shifts[indexOfMin].multiply(1 / 2));
-        other.position = other.position
-            .add(shifts[indexOfMin].multiply(-1 / 2));
-        if (indexOfMin == 0 || indexOfMin == 2) {
-            let sum = this.speed.x + other.speed.x;
-            this.speed.x = sum / 2;
-            other.speed.x = sum / 2;
-        } else {
-            let sum = this.speed.y + other.speed.y;
-            this.speed.y = sum / 2;
-            other.speed.y = sum / 2;
+            // console.log(indexOfMin, this.collisionDirection(other));
+            this.position = this.position
+                .add(shifts[indexOfMin].multiply(1 / 2));
+            other.position = other.position
+                .add(shifts[indexOfMin].multiply(-1 / 2));
+            if (indexOfMin == 0 || indexOfMin == 2) {
+                let sum = this.speed.x + other.speed.x;
+                this.speed.x = sum / 2;
+                other.speed.x = sum / 2;
+            } else {
+                let sum = this.speed.y + other.speed.y;
+                this.speed.y = sum / 2;
+                other.speed.y = sum / 2;
+            }
         }
     }
 }
@@ -172,9 +187,15 @@ class Character extends MovableObject {
     constructor() {
         super();
         this.dead = false;
-        this.walkAcceleration = 5000;
+        this.walkAccelerationScalar = 5000;
+        this.stopAccelerationCoef = 10;
+        this.jumpHeight = 72;
+        this.canJump = true;
         this.movementController = null;
         this.animationController = null;
+        this.setAirResistance(-10, 0);
+        this.setFreeFallAcceleration(1000);
+        this.setMaxSpeed(new Vector(400, 9000));
     }
 
     initAnimationController(animationsCollection) {
@@ -185,13 +206,41 @@ class Character extends MovableObject {
         this.movementController = movementController;
     }
 
+    get walkAcceleration() {
+        // const direction = this.movementController.direction;
+        let acceleration = new Vector(0, 0);
+        if (this.movementController.goingLeft) {
+            acceleration = acceleration.add(new Vector(-this.walkAccelerationScalar, 0));
+        } else if (this.movementController.goingRight) {
+            acceleration = acceleration.add(new Vector(this.walkAccelerationScalar, 0));
+        } else {
+            let speedHorizontal = this.speed.clone;
+            speedHorizontal.y = 0;
+            acceleration = speedHorizontal.multiply(-this.stopAccelerationCoef);
+        }
+        return acceleration;
+    }
+
     get acceleration() {
-        const direction = this.movementController.direction;
-        return super.acceleration.add(direction.multiply(this.walkAcceleration))
+        return super.acceleration.add(this.walkAcceleration);
     }
 
     die() {
         this.dead = true;
+    }
+
+    bump(object) {
+        if (this.collisionDirection(object) == DirectionEnum.Up) {
+            this.canJump = true;
+        }
+        super.bump(object);
+    }
+
+    halfBump(object) {
+        if (this.collisionDirection(object) == DirectionEnum.Up) {
+            this.canJump = true;
+        }
+        super.halfBump(object);
     }
 
     /**
@@ -209,6 +258,11 @@ class Character extends MovableObject {
                     this.bump(object);
                     break;
                 }
+            case objectTypeEnum.Platform:
+                {
+                    this.bump(object);
+                    break;
+                }
             case objectTypeEnum.Spikes:
                 {
                     this.die();
@@ -222,8 +276,18 @@ class Character extends MovableObject {
         }
     }
 
+    get jumpSpeed() {
+        const Vsqr = this.freeFallAcceleration.multiply(-2 * this.jumpHeight);
+        const length = Vsqr.length;
+        return Vsqr.multiply(1 / Math.sqrt(length));
+    }
+
     update(deltaTime) {
         super.update(deltaTime);
+        if (this.canJump && this.movementController.jumping) {
+            this.speed = this.speed.add(this.jumpSpeed);
+        }
+        this.canJump = false;
         if (this.animationController) {
             this.animationController.update(deltaTime);
             this.animationController.walk();
@@ -236,6 +300,12 @@ class Character extends MovableObject {
 }
 
 class Box extends MovableObject {
+    constructor() {
+        super();
+        this.setAirResistance(-10, 0);
+        this.setFreeFallAcceleration(2500);
+    }
+
     /**
      * @override
      */
@@ -247,6 +317,11 @@ class Box extends MovableObject {
                     break;
                 }
             case objectTypeEnum.Piston:
+                {
+                    this.bump(object);
+                    break;
+                }
+            case objectTypeEnum.Platform:
                 {
                     this.bump(object);
                     break;
@@ -269,7 +344,37 @@ class Wall extends GameObject {}
 
 class Spikes extends GameObject {}
 
-class Gate extends GameObject {}
+class Gate extends GameObject {
+    constructor() {
+        super();
+        this.nextLevel = null;
+        this.entered = false;
+        console.log(this);
+    }
+
+    configure(nextLevel) {
+        this.nextLevel = nextLevel;
+
+    }
+
+    /**
+     * @override
+     */
+    collide(object) {
+        switch (object.type) {
+            case objectTypeEnum.Character:
+                {
+                    console.log("Level passed");
+                    this.entered = true;
+                    break;
+                }
+        }
+    }
+
+    draw() {
+        //draw nothing
+    }
+}
 
 class NetworkGameObject extends Utils.mix(GameObject, NetworkElement) {
     onSignalUpdate() {
@@ -399,6 +504,90 @@ class Piston extends NetworkGameObject {
     }
 }
 
+class Platform extends NetworkGameObject {
+    constructor() {
+        super();
+        this.progress = 0;
+        this.speed = -1 / 7;
+        this.shift = null;
+    }
+
+    set position(position) {
+        this._position = position;
+        this.boundaryRectangle = new Rectangle(this._position, this.size);
+        this.startPosition = position;
+    }
+
+    initAnimationController(animationsCollection) {
+        this.animationController = new PlatformAnimationController(animationsCollection);
+        this.onSignalUpdate();
+    }
+
+    setProgress(progress) {
+        if (this.shift) {
+            this.progress = progress;
+            this.progress = Utils.bound(this.progress, 0, 1);
+            const newPosition = this.startPosition.add(this.shift.multiply(this.progress));
+            this._position = newPosition;
+            this.boundaryRectangle = new Rectangle(newPosition, this.size);
+        }
+    }
+
+    configure(shiftX, shiftY) {
+        this.setProgress(0);
+        this.shift = new Vector(shiftX, shiftY);
+    }
+
+    onSignalUpdate() {
+        super.onSignalUpdate();
+        if (this.shift) {
+            if (this.isActive) {
+                this.speed = Math.abs(this.speed);
+            } else {
+                this.speed = -Math.abs(this.speed);
+            }
+        }
+    }
+
+    update(deltaTime) {
+        if (this.shift) {
+            this.setProgress(this.progress + this.speed * deltaTime);
+        }
+    }
+}
+
+class Connector extends Utils.mix(GameObject, NetworkElement) {
+    constructor() {
+        super();
+        this.polyline = null;
+    }
+
+    setPolyline(polyline) {
+        let shift = new Vector(0, 0);
+        let size = new Vector(0, 0);
+        for (let point of polyline) {
+            shift.x = Math.min(shift.x, point.x);
+            shift.y = Math.min(shift.y, point.y);
+            size.x = Math.max(size.x, point.x);
+            size.y = Math.max(size.y, point.y);
+        }
+        this.polyline = [];
+        for (let point of polyline) {
+            let radiusVector = new Vector(point.x, point.y);
+            this.polyline.push(radiusVector.add(shift.negate()));
+            // point.x -= shift.x;
+            // point.y -= shift.y;
+        }
+        size = size.add(shift.negate());
+        this.position = this.position.add(shift);
+        this.size = size;
+    }
+
+    get color() {
+        return this.isActive ? "rgba(0,255,255,0.25)" : "rgba(255,255,255,0.25)";
+    }
+}
+
 class ObjectFactory {
     constructor(params) {
         this.keyboard = params.keyboard;
@@ -418,15 +607,24 @@ class ObjectFactory {
         if (type == "Character") {
             object.setMovementController(this.movementController);
         }
-        if (type == "Character" || type == "Box") {
-            object.setAirResistance(-10);
-            object.setFreeFallAcceleration(2500);
-        }
         if (type == "Piston") {
             object.configure(
                 data.properties.direction,
                 data.properties.deltaLength
             );
+        }
+        if (type == "Platform") {
+            object.configure(
+                data.properties.shiftX,
+                data.properties.shiftY
+            );
+            console.log(object);
+        }
+        if (type == "Connector") {
+            object.setPolyline(data.polyline);
+        }
+        if (type == "Gate") {
+            object.configure(data.properties.nextLevel);
         }
         return object;
     }
@@ -444,14 +642,17 @@ let objectClassEnum = {
     Gate: Gate,
     Lamp: Lamp,
     Plate: Plate,
-    Piston: Piston
+    Piston: Piston,
+    Connector: Connector,
+    Platform: Platform
 }
 
 let animationControllerEnum = {
     Character: CharacterAnimationController,
     Lamp: LampAnimationController,
     Plate: PlateAnimationController,
-    Piston: PistonAnimationController
+    Piston: PistonAnimationController,
+    Platform: PlatformAnimationController
 }
 
 /**
@@ -466,7 +667,8 @@ let objectTypeEnum = {
     Gate: Gate.name,
     Lamp: Lamp.name,
     Plate: Plate.name,
-    Piston: Piston.name
+    Piston: Piston.name,
+    Platform: Platform.name
 }
 
 /**
@@ -522,6 +724,7 @@ class WorldState {
         this.character = null;
         this.width = null;
         this.height = null;
+        this.gates = [];
         this.passed = false;
         this.status = WorldStatus.InProgress;
     }
@@ -530,6 +733,9 @@ class WorldState {
         this.objects.push(object);
         if (object.type == objectTypeEnum.Character) {
             this.character = object;
+        }
+        if (object.type == objectTypeEnum.Gate) {
+            this.gates.push(object);
         }
     }
 
@@ -557,20 +763,35 @@ class WorldState {
         }
     }
 
-    get levelPassed() {
-        let passed = true;
-        if (this.character) {
-            passed = this.character.position.x + this.character.size.x > this.width;
+    get nextLevel() {
+        for (let gate of this.gates) {
+            if (gate.entered) {
+                return gate.nextLevel;
+            }
         }
-        return (this.status == WorldStatus.Passed) || passed;
+        return null;
+    }
+
+    get levelPassed() {
+        if (this.status == WorldStatus.Passed) {
+            return true;
+        }
+        for (let gate of this.gates) {
+            if (gate.entered) {
+                return true;
+            }
+        }
+        return false;
     }
 
     get levelLost() {
-        let lost = false;
-        if (this.character) {
-            lost = this.character.dead;
+        if (this.status == WorldStatus.Lost) {
+            return true;
         }
-        return (this.status == WorldStatus.Lost) || lost;
+        if (this.character && this.character.dead) {
+            return true;
+        }
+        return false;
     }
 
     updateStatus() {
@@ -593,6 +814,7 @@ class WorldState {
             }
         }
         this.checkCollisions();
+        this.updateStatus();
     }
 }
 
@@ -669,7 +891,7 @@ class WorldStateFactory {
                     const type = objectData.name;
                     if (type) {
                         const size = new Vector(objectData.width, objectData.height);
-                        const position = new Vector(objectData.x, objectData.y - size.y);
+                        const position = new Vector(objectData.x, objectData.y - (type == "Gate" ? 0 : size.y));
                         let object = this.objectFactory.getObject(type, position, size, objectData);
                         worldState.addObject(object);
 
@@ -712,7 +934,19 @@ class GameState {
         this.worldState = null;
         this.levels = new Map();
         this.isLoaded = false;
-        this.loadLevel("level_2");
+        this.loadLevel(this.firstLevelName);
+    }
+
+    get firstLevelName() {
+        const URL = window.location.href;
+        const paramsString = Utils.substringAfter(URL, '?');
+        let params = new URLSearchParams(paramsString);
+        const name = params.get("level");
+        if (name) {
+            return name;
+        } else {
+            return "level_1"
+        }
     }
 
     getLevel(name) {
@@ -745,7 +979,7 @@ class GameState {
     update(deltaTime) {
         if (this.isLoaded) {
             if (this.worldState.levelPassed) {
-                this.loadLevel(this.level.data.properties.nextLevel);
+                this.loadLevel(this.worldState.nextLevel);
             } else if (this.worldState.levelLost) {
                 this.restart();
             } else {
@@ -796,7 +1030,7 @@ class Game {
 
     tick() {
         try {
-            const minFPS = 15;
+            const minFPS = 30;
             const maxDeltaTime = 1 / minFPS;
             let deltaTime = Math.min(this.timer.deltaTime, maxDeltaTime);
             this.timer.reset();

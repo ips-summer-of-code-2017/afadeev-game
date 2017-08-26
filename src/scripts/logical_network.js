@@ -164,26 +164,26 @@ class NetworkBuilder {
     }
 }
 
-let networkBuilder = new NetworkBuilder();
-networkBuilder.addElement(
-    new NetworkElement(),
-    "lever1", ["lamp2", "lift1", "gate1"],
-    "manual"
-);
-networkBuilder.addElement(
-    new NetworkElement(),
-    "lever2", ["lamp1", "piston1", "piston2", "gate1"],
-    "manual"
-);
-networkBuilder.addElement(new NetworkElement(), "lamp1", [], "anyof");
-networkBuilder.addElement(new NetworkElement(), "lamp2", [], "anyof");
-networkBuilder.addElement(new NetworkElement(), "lift1", [], "anyof");
-networkBuilder.addElement(new NetworkElement(), "gate1", [], "anyof");
-networkBuilder.addElement(new NetworkElement(), "piston1", [], "anyof");
-networkBuilder.addElement(new NetworkElement(), "piston2", [], "anyof");
+// let networkBuilder = new NetworkBuilder();
+// networkBuilder.addElement(
+//     new NetworkElement(),
+//     "lever1", ["lamp2", "lift1", "gate1"],
+//     "manual"
+// );
+// networkBuilder.addElement(
+//     new NetworkElement(),
+//     "lever2", ["lamp1", "piston1", "piston2", "gate1"],
+//     "manual"
+// );
+// networkBuilder.addElement(new NetworkElement(), "lamp1", [], "anyof");
+// networkBuilder.addElement(new NetworkElement(), "lamp2", [], "anyof");
+// networkBuilder.addElement(new NetworkElement(), "lift1", [], "anyof");
+// networkBuilder.addElement(new NetworkElement(), "gate1", [], "anyof");
+// networkBuilder.addElement(new NetworkElement(), "piston1", [], "anyof");
+// networkBuilder.addElement(new NetworkElement(), "piston2", [], "anyof");
 
-networkBuilder.buildNetwork();
-console.log("Network Builder:", networkBuilder);
+// networkBuilder.buildNetwork();
+// console.log("Network Builder:", networkBuilder);
 
 /*
 class LogicalLink {

@@ -69,7 +69,12 @@ let Utils = {
      * @returns {string}
      */
     substringAfter(text, searchString) {
-        return text.substring(text.lastIndexOf(searchString) + 1);
+        const index = text.lastIndexOf(searchString);
+        if (index != -1) {
+            return text.substring(index + 1);
+        } else {
+            return "";
+        }
     },
 
     /**
@@ -80,7 +85,12 @@ let Utils = {
      * @returns {string}
      */
     substringBefore(text, searchString) {
-        return text.substring(0, text.indexOf(searchString));
+        const index = text.indexOf(searchString);
+        if (index != -1) {
+            return text.substring(0, index);
+        } else {
+            return "";
+        }
     },
 
     /**
