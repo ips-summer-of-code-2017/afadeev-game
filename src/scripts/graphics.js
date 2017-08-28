@@ -15,12 +15,17 @@ class Sprite {
         this.fullSize = spriteData.fullSize;
     }
 
-    draw(location) {
+    draw(location, mirrored) {
         let scale = new Vector(
             location.size.x / this.fullSize.x,
             location.size.y / this.fullSize.y
         );
         if (!Utils.isNull(this.image)) {
+            if (mirrored) {
+                this.context.save();
+                this.context.scale(-1, 1);
+                this.context.translate(-location.left * 2 - 2 * this.fullSize.x, 0);
+            }
             const dstWidth = this.size.x * scale.x;
             const dstHeight = this.size.y * scale.y;
             const dstX = Math.round(location.position.x) + this.offset.x * scale.x;
@@ -34,6 +39,9 @@ class Sprite {
                 srcX, srcY, srcWidth, srcHeight,
                 dstX, dstY, dstWidth, dstHeight
             );
+            if (mirrored) {
+                this.context.restore();
+            }
         } else {
             const dstX = Math.round(position.x);
             const dstY = Math.round(position.y);
@@ -202,9 +210,9 @@ class Animation {
         return this.sprites.length;
     }
 
-    draw(index, rectangle) {
+    draw(index, rectangle, mirrored) {
         if (this.isInitialized) {
-            this.sprites[index].draw(rectangle);
+            this.sprites[index].draw(rectangle, mirrored);
         }
     }
 }
@@ -216,6 +224,7 @@ class AnimationController {
         this.frameIndex = null;
         // progress of current frame in range [0..1]
         this.progress = null;
+        this.isMirrored = false;
         this.setFramerate(15);
     }
 
@@ -245,18 +254,47 @@ class AnimationController {
 
     draw(rectangle) {
         if (this.currentAnimation && !Utils.isNull(this.frameIndex)) {
-            this.currentAnimation.draw(this.frameIndex, rectangle);
+            this.currentAnimation.draw(this.frameIndex, rectangle, this.isMirrored);
         }
     }
 }
 
 class CharacterAnimationController extends AnimationController {
+    constructor(animationsCollection) {
+        super(animationsCollection);
+        this.movementController = null;
+    }
+
+    setMovementController(movementController) {
+        this.movementController = movementController;
+    }
+
     idle() {
         this.setAnimation("character/anim_idle/");
     }
 
-    walk() {
+    walkRight() {
         this.setAnimation("character/anim_walk/");
+        this.isMirrored = false;
+    }
+
+    walkLeft() {
+        this.setAnimation("character/anim_walk/");
+        this.isMirrored = true;
+    }
+
+    update(deltaTime) {
+
+        if (this.movementController) {
+            if (this.movementController.goingLeft) {
+                this.walkLeft();
+            } else if (this.movementController.goingRight) {
+                this.walkRight();
+            } else {
+                this.idle();
+            }
+        }
+        super.update(deltaTime);
     }
 }
 
@@ -458,7 +496,7 @@ class GameGraphics {
         this.camera = camera;
     }
 
-    drawLine(pointA, pointB, color, position) {
+    drawLine(pointA, pointB, color, position = new Vector(0, 0)) {
         this.context.strokeStyle = color;
         this.context.lineWidth = 3;
         this.context.beginPath();
@@ -518,10 +556,74 @@ class GameGraphics {
         }
     }
 
+    get UIScale() {
+        const heightToWidthOptimalRatio = 9 / 16;
+        const optimalHeight = Math.min(this.width * heightToWidthOptimalRatio, this.height);
+        const scale = Math.min(optimalHeight / 720, 1);
+        return scale;
+    }
+
+    drawHeart(rectangle) {
+        this.context.strokeStyle = "#000000";
+        this.context.strokeWeight = 3;
+        this.context.lineWidth = 5.0;
+        this.context.fillStyle = "#FF0000";
+        const w = rectangle.width;
+        const h = rectangle.height;
+        const pX = rectangle.left;
+        const pY = rectangle.up;
+        this.context.beginPath();
+        this.context.moveTo(pX, pY + h / 4);
+        this.context.quadraticCurveTo(pX, pY, pX + w / 4, pY);
+        this.context.quadraticCurveTo(pX + w / 2, pY, pX + w / 2, pY + h / 4);
+        this.context.quadraticCurveTo(pX + w / 2, pY, pX + w * 3 / 4, pY);
+        this.context.quadraticCurveTo(pX + w, pY, pX + w, pY + h / 4);
+        this.context.quadraticCurveTo(pX + w, pY + h / 2, pX + w * 3 / 4, pY + h * 3 / 4);
+        this.context.lineTo(pX + w / 2, pY + h);
+        this.context.lineTo(pX + w / 4, pY + h * 3 / 4);
+        this.context.quadraticCurveTo(pX, pY + h / 2, pX, pY + h / 4);
+        this.context.stroke();
+        this.context.fill();
+    }
+
+    drawLives(livesCount) {
+        const heartSize = 64 * this.UIScale;
+        const commonWidth = (1 + Math.log2(livesCount)) * heartSize;
+        const offset = new Vector(16 * this.UIScale, 16 * this.UIScale);
+        const deltaX = (livesCount == 1) ? 0 : (commonWidth - heartSize) / (livesCount - 1);
+        const size = new Vector(heartSize, heartSize);
+        for (let index = 0; index < livesCount; index++) {
+            const position = new Vector(index * deltaX, 0).add(offset);
+            this.drawHeart(new Rectangle(position, size));
+        }
+    }
+
+    drawUI(gameState) {
+        this.context.setTransform(1, 0, 0, 1, 0, 0);
+        this.drawLives(gameState.lives);
+    }
+
+    drawLoadingScreen() {
+
+    }
+
+    drawGameOverScreen() {
+
+    }
+
     drawGameState(gameState) {
-        if (this.isInitalized && gameState.isLoaded) {
-            this.drawBackground();
-            this.drawWorldState(gameState.worldState);
+        if (this.isInitalized) {
+            if (gameState.status == GameStatusEnum.Loading) {
+                this.drawLoadingScreen();
+            } else if (gameState.status == GameStatusEnum.GameOver) {
+                this.drawBackground();
+                this.drawWorldState(gameState.worldState);
+                this.drawGameOverScreen();
+            } else {
+                this.drawBackground();
+                this.drawWorldState(gameState.worldState);
+                this.drawUI(gameState);
+            }
         }
     }
 

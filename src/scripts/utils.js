@@ -9,27 +9,31 @@
  * @type {Object}
  * @desc Provides utility methods
  */
-let Utils = {
+class Utils {
+    constructor() {
+        throw new Error("Cannot construct Utils");
+    }
+
     /**
      * @method isNull
      * @desc Returns true if value is null
      * @param {*} value - Value to check
      * @returns {boolean}
      */
-    isNull(value) {
+    static isNull(value) {
         return Object.is(value, null);
-    },
+    }
 
     /**
      * @method lerp
-     * @desc Returns linear
+     * @desc Returns result of linear interpolation from value x1 to value x1 with progress alpha 
      * @param {number} x1 
      * @param {number} x2 
      * @param {number} alpha 
      */
-    lerp(x1, x2, alpha) {
+    static lerp(x1, x2, alpha) {
         return (x1 * (1 - alpha) + x2 * alpha);
-    },
+    }
 
     /**
      * @method splitIntoLines
@@ -37,10 +41,10 @@ let Utils = {
      * @param {string} text - Text to split into lines
      * @return {Array.<string>}
      */
-    splitIntoLines(text) {
+    static splitIntoLines(text) {
         let newline = /\r\n|\n\r|\n|\r/g;
         return text.replace(newline, "\n").split("\n");
-    },
+    }
 
     /**
      * @method splitIntoNonEmptyLines
@@ -48,7 +52,7 @@ let Utils = {
      * @param {string} text 
      * @return {Array.<string>}
      */
-    splitIntoNonEmptyLines(text) {
+    static splitIntoNonEmptyLines(text) {
         // TODO: use foreach+filter
         const lines = Utils.splitIntoLines(text);
         let result = []
@@ -59,7 +63,7 @@ let Utils = {
             }
         }
         return result;
-    },
+    }
 
     /**
      * @method substringAfter
@@ -68,14 +72,14 @@ let Utils = {
      * @param {string} searchString - String preceding substring
      * @returns {string}
      */
-    substringAfter(text, searchString) {
+    static substringAfter(text, searchString) {
         const index = text.lastIndexOf(searchString);
         if (index != -1) {
             return text.substring(index + 1);
         } else {
             return "";
         }
-    },
+    }
 
     /**
      * @method substringBefore
@@ -84,32 +88,32 @@ let Utils = {
      * @param {string} searchString - String after substring
      * @returns {string}
      */
-    substringBefore(text, searchString) {
+    static substringBefore(text, searchString) {
         const index = text.indexOf(searchString);
         if (index != -1) {
             return text.substring(0, index);
         } else {
             return "";
         }
-    },
+    }
 
     /**
      * 
      * @param {string} path 
      */
-    getFileDirectory(path) {
+    static getFileDirectory(path) {
         const indexOfLastSlash = path.lastIndexOf('/');
         return path.substring(0, indexOfLastSlash + 1);
-    },
+    }
 
     /**
      * 
      * @param {string} path 
      */
-    getFileName(path) {
+    static getFileName(path) {
         const indexOfLastSlash = path.lastIndexOf('/');
         return path.substring(indexOfLastSlash + 1);
-    },
+    }
 
     /**
      * @method copyProperties
@@ -117,7 +121,7 @@ let Utils = {
      * @param {Object} target 
      * @param {Object} source 
      */
-    copyProperties(target = {}, source = {}) {
+    static copyProperties(target = {}, source = {}) {
         const ownPropertyNames = Object.getOwnPropertyNames(source);
 
         ownPropertyNames
@@ -126,7 +130,7 @@ let Utils = {
                 const desc = Object.getOwnPropertyDescriptor(source, key);
                 Object.defineProperty(target, key, desc);
             });
-    },
+    }
 
     /**
      * @method mix
@@ -134,7 +138,7 @@ let Utils = {
      * @param {...function()} mixins - List of classes
      * @returns {function()}
      */
-    mix(...mixins) {
+    static mix(...mixins) {
         class Mix {
             constructor(...args) {
                 for (let mixin of mixins) {
@@ -151,52 +155,13 @@ let Utils = {
         }
 
         return Mix;
-    },
+    }
 
-    trim(string) {
+    static trim(string) {
         return string.trim();
-    },
+    }
 
-    bound(value, min, max) {
+    static bound(value, min, max) {
         return Math.min(max, Math.max(value, min));
     }
 }
-
-// class Foo {
-//     constructor() {
-//         console.log("Foo");
-//     }
-
-//     foo() {
-//         console.log("foo");
-//     }
-// }
-
-// class Bar {
-//     constructor() {
-//         console.log("Bar");
-//     }
-
-//     bar() {
-//         console.log("bar");
-//     }
-// }
-
-// class Baz extends Utils.mix(Foo, Bar) {
-//     constructor() {
-//         super();
-//         console.log("Baz");
-//     }
-
-//     baz() {
-//         console.log("baz");
-//     }
-// }
-
-// // let bar = new Bar();
-// // bar.bar();
-
-// let baz = new Baz();
-// baz.foo();
-// baz.bar();
-// baz.baz();

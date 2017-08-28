@@ -119,7 +119,6 @@ class MovableObject extends GameObject {
      * @param {GameObject} other
      */
     bump(other) {
-        // console.log(this.collisionDirection(other));
         const rectA = this.boundaryRectangle;
         const rectB = other.boundaryRectangle;
         let shifts = [
@@ -135,7 +134,6 @@ class MovableObject extends GameObject {
                 indexOfMin = index;
             }
         }
-        // console.log(indexOfMin, this.collisionDirection(other));
         this.position = this.position
             .add(shifts[indexOfMin]);
         if (indexOfMin == 0 || indexOfMin == 2) {
@@ -165,7 +163,6 @@ class MovableObject extends GameObject {
                     indexOfMin = index;
                 }
             }
-            // console.log(indexOfMin, this.collisionDirection(other));
             this.position = this.position
                 .add(shifts[indexOfMin].multiply(1 / 2));
             other.position = other.position
@@ -200,10 +197,14 @@ class Character extends MovableObject {
 
     initAnimationController(animationsCollection) {
         this.animationController = new CharacterAnimationController(animationsCollection);
+        this.animationController.setMovementController(this.movementController);
     }
 
     setMovementController(movementController) {
         this.movementController = movementController;
+        if (this.animationController) {
+            this.animationController.setMovementController(this.movementController);
+        }
     }
 
     get walkAcceleration() {
@@ -290,7 +291,6 @@ class Character extends MovableObject {
         this.canJump = false;
         if (this.animationController) {
             this.animationController.update(deltaTime);
-            this.animationController.walk();
         }
     }
 
@@ -349,7 +349,6 @@ class Gate extends GameObject {
         super();
         this.nextLevel = null;
         this.entered = false;
-        console.log(this);
     }
 
     configure(nextLevel) {
@@ -364,7 +363,6 @@ class Gate extends GameObject {
         switch (object.type) {
             case objectTypeEnum.Character:
                 {
-                    console.log("Level passed");
                     this.entered = true;
                     break;
                 }
@@ -618,7 +616,6 @@ class ObjectFactory {
                 data.properties.shiftX,
                 data.properties.shiftY
             );
-            console.log(object);
         }
         if (type == "Connector") {
             object.setPolyline(data.polyline);
@@ -928,13 +925,21 @@ class WorldStateFactory {
     }
 }
 
+const GameStatusEnum = new Enum(
+    "InProgress",
+    "Loading",
+    "GameOver"
+);
+
 class GameState {
     constructor(params) {
         this.worldStateFactory = new WorldStateFactory(params);
         this.worldState = null;
         this.levels = new Map();
+        this.status = GameStatusEnum.Loading;
         this.isLoaded = false;
         this.loadLevel(this.firstLevelName);
+        this.lives = 5;
     }
 
     get firstLevelName() {
@@ -981,10 +986,21 @@ class GameState {
             if (this.worldState.levelPassed) {
                 this.loadLevel(this.worldState.nextLevel);
             } else if (this.worldState.levelLost) {
-                this.restart();
+                this.lives -= 1;
+                if (this.lives <= 0) {
+                    this.status = GameStatusEnum.GameOver;
+                } else {
+                    this.status = GameStatusEnum.Loading;
+                    this.restart();
+                }
             } else {
-                this.worldState.update(deltaTime);
+                if (this.status != GameStatusEnum.GameOver) {
+                    this.status = GameStatusEnum.InProgress;
+                    this.worldState.update(deltaTime);
+                }
             }
+        } else {
+            this.status = GameStatusEnum.Loading;
         }
     }
 }

@@ -83,4 +83,12 @@ class Rectangle {
     get down() {
         return this._down;
     }
+
+    get width() {
+        return this.size.x;
+    }
+
+    get height() {
+        return this.size.y;
+    }
 }
