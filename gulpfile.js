@@ -9,13 +9,30 @@ let cleanCSS = require('gulp-clean-css');
 let closureCompiler = require('google-closure-compiler').gulp();
 
 gulp.task('clean', () => {
-    return gulp.src('./dist', {
+    return gulp.src([
+            './dist',
+            './temp'
+        ], {
             read: false
         })
         .pipe(clean());
 });
 
-gulp.task('compile', () => {
+gulp.task('combine', () => {
+    return gulp.src('./src/*.html')
+        .pipe(useref())
+        .pipe(gulp.dest('./temp/'));
+});
+
+gulp.task('css', () => {
+    return gulp.src('./temp/styles')
+        .pipe(cleanCSS({
+            compatibility: 'ie8'
+        }))
+        .pipe(gulp.dest('./dist/'));
+})
+
+gulp.task('js', () => {
     return gulp.src('./src/scripts/*.js')
         .pipe(closureCompiler({
             compilation_level: 'ADVANCED',
@@ -24,19 +41,10 @@ gulp.task('compile', () => {
             language_out: 'ECMASCRIPT5_STRICT',
             js_output_file: 'main.js'
         }))
-        .pipe(gulp.dest('./dist/scripts/'));;
+        .pipe(gulp.dest('./dist/scripts/'));
 });
 
-gulp.task('combine', () => {
-    return gulp.src('./src/*.html')
-        .pipe(useref())
-        .pipe(gulpif('*.css', (cleanCSS({
-            compatibility: 'ie8'
-        }))))
-        .pipe(gulp.dest('./dist/'));
-});
-
-gulp.task('build', sequence('combine', 'compile'));
+gulp.task('build', sequence('combine', 'css', 'js'));
 
 gulp.task('watch', () => {
     gulp.watch('./src/**/*.*', () => {

@@ -1,2 +1,6 @@
 textures: sprites_3.png
-character/jump/1.png	0	0	18	42	10	20	32	64	
+plate/anim_off/0.png	0	0	64	16	0	0	64	16	
+character/anim_walk/3.png	0	16	18	46	8	18	32	64	
+character/anim_walk/0.png	18	16	18	46	8	18	32	64	
+character/anim_jump/2.png	36	16	18	44	10	20	32	64	
+character/anim_walk/2.png	54	16	10	46	11	18	32	64	

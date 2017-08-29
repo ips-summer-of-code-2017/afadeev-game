@@ -8,13 +8,13 @@
  "margin":0,
  "name":"TilesetTest",
  "spacing":0,
- "tilecount":7,
- "tileheight":64,
+ "tilecount":9,
+ "tileheight":128,
  "tiles":
     {
      "0":
         {
-         "image":"..\/sprites\/all\/character\/idle\/0.png",
+         "image":"..\/sprites\/all\/character\/anim_idle\/0.png",
          "imageheight":64,
          "imagewidth":32,
          "type":"Character"
@@ -57,8 +57,20 @@
          "imageheight":32,
          "imagewidth":32,
          "type":"Spikes"
+        },
+     "7":
+        {
+         "image":"..\/sprites\/all\/lamp\/anim_on\/0.png",
+         "imageheight":128,
+         "imagewidth":128
+        },
+     "8":
+        {
+         "image":"..\/sprites\/all\/plate\/anim_off\/0.png",
+         "imageheight":16,
+         "imagewidth":64
         }
     },
- "tilewidth":64,
+ "tilewidth":128,
  "type":"tileset"
 }

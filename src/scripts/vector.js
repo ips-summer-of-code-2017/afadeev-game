@@ -33,12 +33,14 @@ class Vector {
      * @method normalize
      * @description Normalizes the vector
      */
-    normalize() {
-        const length = this.length;
-        if (length) {
-            this.x /= length;
-            this.y /= length;
+    get normalized() {
+        let vec = new Vector(this.x, this.y);
+        const length = vec.length;
+        if (length != 0) {
+            vec.x /= length;
+            vec.y /= length;
         }
+        return vec;
     }
 
     /**
@@ -78,5 +80,9 @@ class Vector {
      */
     scalarProduct(vec) {
         return (this.x * vec.x + this.y * vec.y);
+    }
+
+    get clone() {
+        return new Vector(this.x, this.y);
     }
 }
